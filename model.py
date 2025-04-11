@@ -38,7 +38,6 @@ class Agent(nn.Module):
         self.actor_logstd = nn.Parameter(torch.zeros(1, 1))
 
         #self.actor = layer_init(nn.Linear(512, envs.single_action_space.n), std=0.01)
-        self.actor = (nn.Linear(512, 1))
         self.critic = (nn.Linear(512, 1))
 
     def get_value(self, x):
@@ -53,21 +52,16 @@ class Agent(nn.Module):
             x = x.unsqueeze(0)
 
         x = x / 255.0  # Normalize
-        print(f'is there nans in x {torch.isnan(x).any()}')
+
         hidden = self.network(x)
-        print(f'is there nans in hidden {torch.isnan(hidden).any()}')
         hidden = self.fc(hidden)
-        print(f'is there nans in hidden2 {torch.isnan(hidden).any()}')
-        if torch.isnan(hidden).any():
-            print(f'found nans in hidden x is {x}')
         mean = self.actor_mean(hidden)
-        print(f'is there nans in mean {torch.isnan(mean).any()}')
         std = torch.exp(self.actor_logstd.expand_as(mean))
-        print(f'is there nans in std {torch.isnan(std).any()}')
         dist = Normal(mean, std)
         if action is None:
             action = dist.sample()
-        
+
+            #action = torch.tanh(action) 
         #print(f'dim of returns {action.shape} and {dist.log_prob(action).shape} and {dist.entropy().shape} and {self.critic(hidden).shape}')
         return (
             action,
