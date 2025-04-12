@@ -127,7 +127,6 @@ if __name__ == "__main__":
     args.batch_size = int(args.num_steps)  # 5
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
-    args.num_iterations = 1
 
 
     print(f'batch_size: {args.batch_size} minibatch_size: {args.minibatch_size} num_iterations: {args.num_iterations}')
@@ -306,13 +305,13 @@ if __name__ == "__main__":
             writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
 
-        if iteration % 1 == 0:
+        if iteration % 10 == 0:
             eval_ret = evaluate(
                 make_env,
                 args.map_name,
                 agent,
                 args,
-                global_step,
+                iteration,
                 num_episodes=2,
                 video=args.video
             )
