@@ -84,6 +84,8 @@ class Args:
     map_name: str = "straight_road"
     run_label: int = 1  # represent different seeds
 
+    debug: bool = False  # if true, we plot
+
     # to be filled in runtime
     batch_size: int = 0
     """the batch size (computed in runtime)"""
@@ -122,7 +124,7 @@ if __name__ == "__main__":
 
 
     print(f'batch_size: {args.batch_size} minibatch_size: {args.minibatch_size} num_iterations: {args.num_iterations}')
-    print(f'map_name: {args.map_name}')
+    print(f'map_name: {args.map_name} debug {args.debug} run_label {args.run_label}')
     run_name = f"env__{args.exp_name}__{args.seed}__{int(time.time())}"
     if args.track:
         pass
@@ -164,7 +166,6 @@ if __name__ == "__main__":
 
 
     eval_returns = []
-    args.num_iterations = 1
     for iteration in tqdm(range(1, args.num_iterations + 1)):
         # Annealing the rate if instructed to do so.
         if args.anneal_lr:
@@ -284,16 +285,17 @@ if __name__ == "__main__":
         explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
         # TRY NOT TO MODIFY: record rewards for plotting purposes
-        writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
-        writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
-        writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
-        writer.add_scalar("losses/entropy", entropy_loss.item(), global_step)
-        writer.add_scalar("losses/old_approx_kl", old_approx_kl.item(), global_step)
-        writer.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
-        writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
-        writer.add_scalar("losses/explained_variance", explained_var, global_step)
-        print("SPS:", int(global_step / (time.time() - start_time)))
-        writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
+        if args.debug:
+            writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
+            writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
+            writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
+            writer.add_scalar("losses/entropy", entropy_loss.item(), global_step)
+            writer.add_scalar("losses/old_approx_kl", old_approx_kl.item(), global_step)
+            writer.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
+            writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
+            writer.add_scalar("losses/explained_variance", explained_var, global_step)
+            print("SPS:", int(global_step / (time.time() - start_time)))
+            writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
 
         if iteration % 10 == 0:
@@ -304,7 +306,8 @@ if __name__ == "__main__":
                 num_episodes=2,
             )
             eval_returns.append(eval_ret)
-            writer.add_scalar("charts/eval_returns", eval_ret, global_step)
+            if args.debug:
+                writer.add_scalar("charts/eval_returns", eval_ret, global_step)
 
     if args.save_model:
         model_path = f"runs/{run_name}/{args.exp_name}.cleanrl_model"

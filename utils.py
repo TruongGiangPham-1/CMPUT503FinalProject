@@ -77,17 +77,20 @@ class duckieEnvWrapper:
 
 
 def evaluate(make_env, map_name, agent, num_episodes=10, velocity=0.2):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f'evaluating....')
     env = make_env(map_name)
     env = duckieEnvWrapper(env)
     total_reward = 0
     for _ in range(num_episodes):
         obs = env.reset()
+        obs = torch.tensor(obs, device=device)  # (frame_stack, h, w)
         done = False
         while not done:
             with torch.no_grad():
                 omega = agent.get_action_and_value(obs)[0]
             env_action = [velocity, omega.cpu().numpy()]
             obs, reward, done = env.step(env_action)
+            obs = torch.tensor(obs, device=device)  # (frame_stack, h, w)
             total_reward += reward
     return total_reward / num_episodes
