@@ -141,6 +141,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
+    print(f'device: {device}')
 
     # env setup
     env = make_env(args.map_name)
