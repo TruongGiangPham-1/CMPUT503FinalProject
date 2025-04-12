@@ -81,6 +81,10 @@ class Args:
     target_kl: float = None
     """the target KL divergence threshold"""
 
+    """
+    map names
+    straight_road", "4way", "udem1", "small_loop", "small_loop_cw", "zigzag_dists", "loop_obstacles", "loop_pedestrians
+    """
     map_name: str = "straight_road"
     run_label: int = 1  # represent different seeds
     video: bool = False  # if true, we get video
@@ -110,7 +114,7 @@ def make_env(map_name):
         domain_rand=0,
         camera_width=640,
         camera_height=480,
-        accept_start_angle_deg=4, # start close to straight
+        accept_start_angle_deg=180, # start close to straight
         full_transparency=False,  # additional robot info returned in info dict
         distortion=True,
     ) 
