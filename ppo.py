@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
 
     eval_returns = []
-    print(f'num_iterations: {args.num_iterations}')
+    args.num_iterations = 1
     for iteration in tqdm(range(1, args.num_iterations + 1)):
         # Annealing the rate if instructed to do so.
         if args.anneal_lr:
@@ -296,14 +296,15 @@ if __name__ == "__main__":
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
 
-        if iteration % 1000 == 0:
-            eval_ret = episodic_returns = evaluate(
+        if iteration % 10 == 0:
+            eval_ret = evaluate(
                 make_env,
                 args.map_name,
                 agent,
-                eval_episodes=10,
+                num_episodes=2,
             )
             eval_returns.append(eval_ret)
+            writer.add_scalar("charts/eval_returns", eval_ret, global_step)
 
     if args.save_model:
         model_path = f"runs/{run_name}/{args.exp_name}.cleanrl_model"

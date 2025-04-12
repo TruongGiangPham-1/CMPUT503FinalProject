@@ -2,6 +2,7 @@ import gym
 from collections import deque
 import numpy as np
 import cv2
+import torch
 """
 
 Args:
@@ -75,16 +76,18 @@ class duckieEnvWrapper:
 
 
 
-def evaluate(make_env, map_name, agent, num_episodes=10):
+def evaluate(make_env, map_name, agent, num_episodes=10, velocity=0.2):
     print(f'evaluating....')
     env = make_env(map_name)
-    #env = duckieEnvWrapper(env)
+    env = duckieEnvWrapper(env)
     total_reward = 0
     for _ in range(num_episodes):
         obs = env.reset()
         done = False
         while not done:
-            action = agent.act(obs)
-            obs, reward, done, _ = env.step(action)
+            with torch.no_grad():
+                omega = agent.get_action_and_value(obs)[0]
+            env_action = [velocity, omega.cpu().numpy()]
+            obs, reward, done = env.step(env_action)
             total_reward += reward
     return total_reward / num_episodes
