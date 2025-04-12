@@ -3,7 +3,10 @@ import os
 import random
 import time
 from dataclasses import dataclass
+# import tqdm
+from tqdm import tqdm
 
+import pandas as pd
 import gym
 import numpy as np
 import torch
@@ -15,7 +18,7 @@ from torch.utils.tensorboard import SummaryWriter
 import gym_duckietown
 from gym_duckietown.simulator import Simulator
 from model import Agent
-from utils import duckieEnvWrapper
+from utils import duckieEnvWrapper, evaluate
 # import Categorical from torch.distributions.categorical
 from torch.distributions.categorical import Categorical
 @dataclass
@@ -78,6 +81,9 @@ class Args:
     target_kl: float = None
     """the target KL divergence threshold"""
 
+    map_name: str = "straight_road"
+    run_label: int = 1  # represent different seeds
+
     # to be filled in runtime
     batch_size: int = 0
     """the batch size (computed in runtime)"""
@@ -109,9 +115,14 @@ def make_env(map_name):
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
+    
     args.batch_size = int(args.num_steps)  # 5
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
+
+
+    print(f'batch_size: {args.batch_size} minibatch_size: {args.minibatch_size} num_iterations: {args.num_iterations}')
+    print(f'map_name: {args.map_name}')
     run_name = f"env__{args.exp_name}__{args.seed}__{int(time.time())}"
     if args.track:
         pass
@@ -130,7 +141,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
     # env setup
-    env = make_env("straight_road")
+    env = make_env(args.map_name)
     env = duckieEnvWrapper(env, args.frame_skip, args.frame_stack)
     print(f'reached here')
     agent = Agent(env).to(device)
@@ -151,8 +162,10 @@ if __name__ == "__main__":
     next_obs = torch.Tensor(next_obs).to(device)
     next_done = torch.zeros(args.num_envs).to(device)
 
+
+    eval_returns = []
     print(f'num_iterations: {args.num_iterations}')
-    for iteration in range(1, args.num_iterations + 1):
+    for iteration in tqdm(range(1, args.num_iterations + 1)):
         # Annealing the rate if instructed to do so.
         if args.anneal_lr:
             frac = 1.0 - (iteration - 1.0) / args.num_iterations
@@ -221,8 +234,6 @@ if __name__ == "__main__":
                 end = start + args.minibatch_size
                 mb_inds = b_inds[start:end]
 
-                print(f'b_obs[mb_inds] shape: {b_obs[mb_inds].shape}')
-                print(f'min obs: {b_obs[mb_inds].min()} max obs: {b_obs[mb_inds].max()}')
                 _, newlogprob, entropy, newvalue = agent.get_action_and_value(b_obs[mb_inds], b_actions[mb_inds])
                 logratio = newlogprob - b_logprobs[mb_inds]
                 ratio = logratio.exp()
@@ -284,30 +295,25 @@ if __name__ == "__main__":
         print("SPS:", int(global_step / (time.time() - start_time)))
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
+
+        if iteration % 1000 == 0:
+            eval_ret = episodic_returns = evaluate(
+                make_env,
+                args.map_name,
+                agent,
+                eval_episodes=10,
+            )
+            eval_returns.append(eval_ret)
+
     if args.save_model:
         model_path = f"runs/{run_name}/{args.exp_name}.cleanrl_model"
         torch.save(agent.state_dict(), model_path)
         print(f"model saved to {model_path}")
-        from cleanrl_utils.evals.ppo_eval import evaluate
-
-        episodic_returns = evaluate(
-            model_path,
-            make_env,
-            args.env_id,
-            eval_episodes=10,
-            run_name=f"{run_name}-eval",
-            Model=Agent,
-            device=device,
-            gamma=args.gamma,
-        )
-        for idx, episodic_return in enumerate(episodic_returns):
-            writer.add_scalar("eval/episodic_return", episodic_return, idx)
-
-        if args.upload_model:
-            from cleanrl_utils.huggingface import push_to_hub
-
-            repo_name = f"{args.env_id}-{args.exp_name}-seed{args.seed}"
-            repo_id = f"{args.hf_entity}/{repo_name}" if args.hf_entity else repo_name
-            push_to_hub(args, episodic_returns, repo_id, "PPO", f"runs/{run_name}", f"videos/{run_name}-eval")
+    
+    # dump to pandas dataframe
+    # create data/folder if it doesn't exist
+    os.makedirs(f"data", exist_ok=True) 
+    df = pd.DataFrame(eval_returns)
+    df.to_csv(f"data/{args.map_name}_run_{args.run_label}_returns.csv", index=False)
 
     writer.close()

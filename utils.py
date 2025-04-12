@@ -72,3 +72,19 @@ class duckieEnvWrapper:
         self.stacked_obs.append(obs)
         state = np.stack(self.stacked_obs, axis=0)
         return state, reward, done
+
+
+
+def evaluate(make_env, map_name, agent, num_episodes=10):
+    print(f'evaluating....')
+    env = make_env(map_name)
+    #env = duckieEnvWrapper(env)
+    total_reward = 0
+    for _ in range(num_episodes):
+        obs = env.reset()
+        done = False
+        while not done:
+            action = agent.act(obs)
+            obs, reward, done, _ = env.step(action)
+            total_reward += reward
+    return total_reward / num_episodes
