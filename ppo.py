@@ -83,8 +83,10 @@ class Args:
 
     map_name: str = "straight_road"
     run_label: int = 1  # represent different seeds
+    video: bool = False  # if true, we get video
 
     debug: bool = False  # if true, we plot
+    car_velocity: float = 0.7
 
     # to be filled in runtime
     batch_size: int = 0
@@ -121,6 +123,7 @@ if __name__ == "__main__":
     args.batch_size = int(args.num_steps)  # 5
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
+    args.num_iterations = 1
 
 
     print(f'batch_size: {args.batch_size} minibatch_size: {args.minibatch_size} num_iterations: {args.num_iterations}')
@@ -187,7 +190,7 @@ if __name__ == "__main__":
 
 
             # TRY NOT TO MODIFY: execute the game and log data.
-            env_action = [0.2, action.cpu().numpy()]  # v and omega
+            env_action = [args.car_velocity, action.cpu().numpy()]  # v and omega
             next_obs, reward, done = env.step(env_action)
             next_done = np.array(done)
             rewards[step] = torch.tensor(reward).to(device).view(-1)
@@ -299,12 +302,15 @@ if __name__ == "__main__":
             writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
 
-        if iteration % 10 == 0:
+        if iteration % 1 == 0:
             eval_ret = evaluate(
                 make_env,
                 args.map_name,
                 agent,
+                args,
+                global_step,
                 num_episodes=2,
+                video=args.video
             )
             eval_returns.append(eval_ret)
             if args.debug:

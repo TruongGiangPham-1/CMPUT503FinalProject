@@ -3,6 +3,8 @@ from collections import deque
 import numpy as np
 import cv2
 import torch
+import os
+import time
 """
 
 Args:
@@ -76,16 +78,18 @@ class duckieEnvWrapper:
 
 
 
-def evaluate(make_env, map_name, agent, num_episodes=10, velocity=0.2):
+def evaluate(make_env, map_name, agent, args, global_step, num_episodes=10, velocity=0.7, video=False):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f'evaluating....')
     env = make_env(map_name)
     env = duckieEnvWrapper(env)
     total_reward = 0
+    frames_list = []
     for _ in range(num_episodes):
         obs = env.reset()
         obs = torch.tensor(obs, device=device)  # (frame_stack, h, w)
         done = False
+        frames_list.append(obs.cpu().numpy())
         while not done:
             with torch.no_grad():
                 omega = agent.get_action_and_value(obs)[0]
@@ -93,4 +97,20 @@ def evaluate(make_env, map_name, agent, num_episodes=10, velocity=0.2):
             obs, reward, done = env.step(env_action)
             obs = torch.tensor(obs, device=device)  # (frame_stack, h, w)
             total_reward += reward
+
+            frames_list.append(obs.cpu().numpy())
+    if video:
+        print(f'writing video')
+        all_frames = np.concatenate(frames_list, axis=0)  # shape (total_frames, h, w)
+        h, w = all_frames.shape[1:]
+        assert h == 84 and w == 84
+        # create video directory if not exists
+        os.makedirs('videos', exist_ok=True)
+
+        out = cv2.VideoWriter(f'videos/video_map_{args.map_name}_runlabel_{args.run_label}_evalstep_{global_step}_{int(time.time())}.mp4', 
+                              cv2.VideoWriter_fourcc(*'mp4v'), 10, (h, w))
+        for frame in all_frames:
+            rbg_frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)  # (h, w) -> (h, w, 3)  just duplicate channel for valid frame
+            out.write(rbg_frame)
+        out.release()
     return total_reward / num_episodes
