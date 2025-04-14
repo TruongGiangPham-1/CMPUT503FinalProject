@@ -25,7 +25,7 @@ from torch.distributions.categorical import Categorical
 class Args:
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     """the name of this experiment"""
-    seed: int = 1
+    #seed: int = 1
     """seed of the experiment"""
     torch_deterministic: bool = True
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
@@ -131,7 +131,7 @@ if __name__ == "__main__":
 
     print(f'batch_size: {args.batch_size} minibatch_size: {args.minibatch_size} num_iterations: {args.num_iterations}')
     print(f'map_name: {args.map_name} debug {args.debug} run_label {args.run_label}')
-    run_name = f"env__{args.exp_name}__{args.seed}__{int(time.time())}"
+    run_name = f"env__{args.exp_name}__{args.run_label}__{int(time.time())}"
     if args.track:
         pass
     writer = SummaryWriter(f"runs/{run_name}")
@@ -141,9 +141,9 @@ if __name__ == "__main__":
     )
 
     # TRY NOT TO MODIFY: seeding
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
+    random.seed(args.run_label)
+    np.random.seed(args.run_label)
+    torch.manual_seed(args.run_label)
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
