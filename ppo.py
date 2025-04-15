@@ -173,6 +173,7 @@ if __name__ == "__main__":
 
 
     eval_returns = []
+    duration_list = []
     for iteration in tqdm(range(1, args.num_iterations + 1)):
         # Annealing the rate if instructed to do so.
         if args.anneal_lr:
@@ -311,7 +312,7 @@ if __name__ == "__main__":
 
 
         if iteration % 10 == 0:
-            eval_ret = evaluate(
+            eval_ret, eval_duration = evaluate(
                 make_env,
                 args.map_name,
                 agent,
@@ -321,8 +322,10 @@ if __name__ == "__main__":
                 video=args.video
             )
             eval_returns.append(eval_ret)
+            duration_list.append(eval_duration)
             if args.debug:
                 writer.add_scalar("charts/eval_returns", eval_ret, global_step)
+            
 
     if args.save_model:
         model_path = f"runs/{run_name}/{args.exp_name}.cleanrl_model"
@@ -334,5 +337,7 @@ if __name__ == "__main__":
     os.makedirs(f"data", exist_ok=True) 
     df = pd.DataFrame(eval_returns)
     df.to_csv(f"data/{args.map_name}_run_{args.run_label}_returns.csv", index=False)
+    df = pd.DataFrame(duration_list)
+    df.to_csv(f"data/{args.map_name}_run_{args.run_label}_duration.csv", index=False)
 
     writer.close()

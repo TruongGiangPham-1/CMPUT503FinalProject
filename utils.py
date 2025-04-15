@@ -85,6 +85,7 @@ def evaluate(make_env, map_name, agent, args, global_step, num_episodes=10, velo
     env = duckieEnvWrapper(env)
     total_reward = 0
     frames_list = []
+    total_duration = 0
     for _ in range(num_episodes):
         obs = env.reset()
         obs = torch.tensor(obs, device=device)  # (frame_stack, h, w)
@@ -99,6 +100,7 @@ def evaluate(make_env, map_name, agent, args, global_step, num_episodes=10, velo
             total_reward += reward
 
             frames_list.append(obs.cpu().numpy())
+            total_duration += 1
     if video:
         print(f'writing video')
         all_frames = np.concatenate(frames_list, axis=0)  # shape (total_frames, h, w)
@@ -113,4 +115,4 @@ def evaluate(make_env, map_name, agent, args, global_step, num_episodes=10, velo
             rbg_frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)  # (h, w) -> (h, w, 3)  just duplicate channel for valid frame
             out.write(rbg_frame)
         out.release()
-    return total_reward / num_episodes
+    return total_reward / num_episodes, total_duration / num_episodes
