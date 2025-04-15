@@ -110,7 +110,7 @@ def make_env(map_name):
     env = Simulator(
         seed=123, # random seed
         map_name=map_name,
-        max_steps=500001, # we don't want the gym to reset itself
+        max_steps=10000, # we don't want the gym to reset itself
         domain_rand=0,
         camera_width=640,
         camera_height=480,
@@ -205,6 +205,11 @@ if __name__ == "__main__":
             #            print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
             #            writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
             #            writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
+            if done:
+                # reset the environment
+                next_obs = env.reset()
+                next_obs = torch.Tensor(next_obs).to(device)
+                next_done = torch.zeros(args.num_envs).to(device)
 
         # bootstrap value if not done
         with torch.no_grad():
