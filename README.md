@@ -25,8 +25,8 @@ Training will generate `data/...map_name_runlabel_x_returns.csv` and `data/...ma
 ## Generating plots
 We provide the return and duration data in `data_straight_road/` and `data_small_loop`.
 - `python3 plot.py --folder data_straight_road/`
-- `python3 plot.py --folder data_straight_road/` --duration
+- `python3 plot.py --folder data_straight_road/ --duration`
 - `python3 plot.py --folder data_small_loop/`
-- `python3 plot.py --folder data_small_loop/`    --duration
+- `python3 plot.py --folder data_small_loop/    --duration`
 `--duration` flag will generate the duration plot.
 
