@@ -2,8 +2,8 @@
 
 ## Introduction
 Slapping PPO onto gym-duckietown.
-![video_small_loop_evalstep_10](https://github.com/user-attachments/assets/b4c88292-bec4-40cb-be81-da97bb02ed20)
 
+![video_small_loop_evalstep_10](https://github.com/user-attachments/assets/b4c88292-bec4-40cb-be81-da97bb02ed20)
 ![video_map_straight_road_runlabel_1_evalstep_50_1744508651](https://github.com/user-attachments/assets/844dbaea-abc3-499a-babd-74d16ec5dc3e)
 
 ## Requirements
